@@ -1,0 +1,61 @@
+import os
+from openpyxl import load_workbook
+
+# Function to remove columns based on headers
+def remove_columns_by_headers(sheet, headers_to_remove):
+    columns_to_remove = []
+    for col in sheet.iter_cols(min_row=1, max_row=1):  # Assuming headers are in the first row
+        for cell in col:
+            if cell.value in headers_to_remove:
+                columns_to_remove.append(cell.column)
+
+    # Remove columns by iterating from the last column to the first
+    for col_index in sorted(columns_to_remove, reverse=True):
+        sheet.delete_cols(col_index)
+
+# Function to copy a column and change the header
+def copy_column(sheet, source_col_idx, new_col_idx, new_header):
+    # Copy data from source column to new column
+    for row in range(2, sheet.max_row + 1):  # Start from row 2 (assuming row 1 is header)
+        sheet.cell(row=row, column=new_col_idx).value = sheet.cell(row=row, column=source_col_idx).value
+
+    # Change the header of the new column
+    sheet.cell(row=1, column=new_col_idx).value = new_header
+
+# Function to process all Excel files in a folder
+def process_excel_files(folder_path, headers_to_remove, source_column, new_header):
+    # Loop through all files in the folder
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".xlsx"):
+            file_path = os.path.join(folder_path, filename)
+            print(f"Processing file: {filename}")
+
+            # Load the workbook and get the first sheet
+            wb = load_workbook(file_path)
+            sheet = wb.active
+
+            # Remove columns based on headers
+            remove_columns_by_headers(sheet, headers_to_remove)
+
+            # Copy a specific column (source_column) to a new one
+            # Let's assume we're copying the column at index `source_column`
+            # to a new column with index `new_column_idx`
+            new_column_idx = sheet.max_column + 1  # New column index (next available)
+            copy_column(sheet, source_column, new_column_idx, new_header)
+
+            # Save the modified workbook with a new name or overwrite
+            wb.save(file_path)
+            print(f"File saved: {filename}")
+
+# Define the folder path where Excel files are located
+folder_path = "path/to/your/folder"
+
+# Define the headers to remove
+headers_to_remove = ["Header1", "Header2", "Header3"]
+
+# Specify the source column index (e.g., 2 for column B) and the new header name for the copied column
+source_column = 2  # Example: column B
+new_header = "New Header for Copied Column"
+
+# Call the function to process the files
+process_excel_files(folder_path, headers_to_remove, source_column, new_header)
